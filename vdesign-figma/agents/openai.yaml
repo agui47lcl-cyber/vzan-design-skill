@@ -1,0 +1,19 @@
+# [INPUT]: 依赖 vdesign-figma/SKILL.md 的能力边界，依赖 Figma MCP 提供设计系统读写能力
+# [OUTPUT]: 对 Codex 提供 Skill 展示信息、默认提示、依赖声明与自动调用策略
+# [POS]: agents 的运行时界面配置，由 Codex Skill 注册器读取
+# [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+interface:
+  display_name: "VDesign Figma"
+  short_description: "用 VDesign 组件、变量和文本样式生成并修复 Figma 后台设计"
+  brand_color: "#006CFF"
+  default_prompt: "Use $vdesign-figma to generate, audit, or repair a VDesign-compliant Figma admin interface."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "figma"
+      description: "读取 VDesign 设计系统并在 Figma 中生成、审计或修复设计稿"
+
+policy:
+  allow_implicit_invocation: true
+
