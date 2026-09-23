@@ -1,0 +1,18 @@
+# [INPUT]: 依赖 vdesign-figma-audit/SKILL.md 的显式认证边界，依赖 Figma MCP 的只读检查和授权修复能力
+# [OUTPUT]: 对 Codex 提供严格审计 Skill 的展示信息、默认提示、依赖声明和自动调用策略
+# [POS]: agents 的运行时界面配置，由 Codex Skill 注册器读取
+# [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
+interface:
+  display_name: "VDesign Figma Audit"
+  short_description: "执行全量、正式或 100% VDesign 绑定审计"
+  brand_color: "#006CFF"
+  default_prompt: "Use $vdesign-figma-audit only for an explicitly requested full, formal, certification-level, all-canvas, or 100% VDesign audit."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "figma"
+      description: "只读检查 VDesign 绑定，并在用户授权时修复失败节点"
+
+policy:
+  allow_implicit_invocation: true

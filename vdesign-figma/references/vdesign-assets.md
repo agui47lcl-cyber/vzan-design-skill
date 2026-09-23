@@ -1,13 +1,13 @@
 <!--
 [INPUT]: 依赖 VDesign Web System 发布库及规范文件 jjmsk6tyXH3mAEaGyR6FhL 的只读盘点结果
-[OUTPUT]: 对外解释稳定库身份、圆角与间距变量、中文文本样式和主要组件的 published key 语义及已知例外
-[POS]: references 的人工可读资产说明，与 vdesign-assets.json 同源；JSON 负责默认快速命中，本文只在歧义、异常或维护缓存时加载
+[OUTPUT]: 对外解释稳定库身份、圆角与真实解析间距、中文文本样式和主要组件的 published key 语义及已知例外
+[POS]: references 的人工可读资产说明，与 vdesign-assets.json 同源；JSON 以 resolvedPx 负责按需命中，本文只在歧义、异常或维护缓存时加载
 [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
 -->
 
 # VDesign asset snapshot
 
-Verified against the published source on 2026-09-12.
+Verified against the published source and the dialog read-back on 2026-09-23.
 
 ## Library identity
 
@@ -25,18 +25,28 @@ Use [vdesign-assets.json](vdesign-assets.json) for routine lookup and batch impo
 
 - A successful cached import is sufficient for `generate-fast`; record it as `cached` and continue.
 - One failed cached import permits one exact scoped search for that intent. Store the result in the working table, but do not edit the snapshot unless the user asked to refresh it.
-- `generate-strict` verifies identity through the imported asset's published key during audit; it does not require a redundant pre-generation search.
+- `vdesign-figma-audit` verifies identity through existing published keys during explicit certification; it does not require a redundant pre-generation search.
 - Keep this Markdown and the JSON cache aligned whenever a verified key is intentionally updated.
 
 ## Spacing variables
 
-The verified semantic spacing token should be bound to Auto Layout fields rather than represented by spacer layers.
+VDesign spacing names are scale labels, not literal pixels. Select by `resolvedPx`; using the number in the name doubles the intended layout value and causes avoidable generate-read-repair calls.
 
-| Resolved px | Variable name | Scope | Published key | Verified |
-| ---: | --- | --- | --- | --- |
-| 16 | `padding/padding 16` | `GAP` | `5a0bb5cfe4b1e6af9afa98e3b6385c6acf82358a` | 2026-09-15 |
+| Resolved px | Variable name | Scope | Published key |
+| ---: | --- | --- | --- |
+| 2 | `padding/padding 1` | `GAP` | `3a400f14f3ea3c4c7b1f9060a26e067a381e1a03` |
+| 4 | `padding/padding 2` | `GAP` | `d5c076053f5ff7f456320c607cf842f9e53b9fc0` |
+| 6 | `padding/padding 3` | `GAP` | `6fa1c8cdca4a6da89ddfcc2f77c99fa7f7bef8a9` |
+| 8 | `padding/padding 4` | `GAP` | `f10aa609c8a9342ede37216d2412dcdec8c35067` |
+| 10 | `padding/padding 5` | `GAP` | `330342c9d23f59eb87545da707023643f3157b8d` |
+| 12 | `padding/padding 6` | `GAP` | `d727bebe46b6e69d9307a4ab5b11c0bee71da0eb` |
+| 16 | `padding/padding 8` | `GAP` | `4718f622ed5831b35031f908772d9e295721db42` |
+| 20 | `padding/padding 10` | `GAP` | `2ec4a1093abe71ea4ff9c79d3d46ee067c56992b` |
+| 24 | `padding/padding 12` | `GAP` | `93e576637fba54e172893a1df7963150d42c2857` |
+| 32 | `padding/padding 16` | `GAP` | `5a0bb5cfe4b1e6af9afa98e3b6385c6acf82358a` |
+| 40 | `padding/padding 20` | `GAP` | `0e2470addc030e13d8c901941463db5f152d3c19` |
 
-The library also exposes a generic `Number 16`, but prefer `padding/padding 16` for `itemSpacing` and padding because it belongs to collection `vzan` and declares `GAP` scope. Never create an empty frame named `间距/16`; bind the owning Auto Layout field.
+Never create an empty frame named `间距/16`; bind the owning Auto Layout field. When a required `resolvedPx` is absent, run one exact scoped search and verify the imported variable's actual value before writing.
 
 ## Radius variables
 

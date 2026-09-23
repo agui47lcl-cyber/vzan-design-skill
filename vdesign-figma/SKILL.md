@@ -1,165 +1,112 @@
 ---
 name: vdesign-figma
-description: Generate, audit, and repair Figma web-admin designs with VDesign Web System components, variables, and text styles. Use when creating or modifying VDesign back-office UI in Figma, checking VDesign token/style/component bindings, or correcting hand-built controls that should be library instances.
+description: Generate or repair VDesign Web System admin UI in Figma with real component instances, text styles, variables, and compact changed-subtree validation. Use for ordinary VDesign screens, dialogs, drawers, panels, tables, and focused repairs; use vdesign-figma-audit only for explicit full, formal, certification-level, or 100% audits.
 metadata:
-  short-description: Align Figma admin designs with VDesign
+  short-description: Generate VDesign UI with a low-call workflow
 ---
 
 <!--
-[INPUT]: 依赖 Figma MCP 的 get_libraries、search_design_system、use_figma、get_metadata 与 get_screenshot，依赖 references 中的机器可读资产缓存和分级审计契约
-[OUTPUT]: 对外提供 generate-fast、generate-strict、audit、repair 四种工作模式，以及文本真实生效、布局自适应和间距变量绑定验收
-[POS]: vdesign-figma 的工作流入口，在快速可见交付与认证级绑定证明之间分流，并阻止样式 ID 假绑定、1px 文本和占位间距进入交付
+[INPUT]: 依赖 Figma MCP 的 use_figma、按需 search_design_system 与 get_screenshot，依赖 references/vdesign-assets.json 的按意图资产缓存
+[OUTPUT]: 对外提供低调用的 VDesign 生成与局部修复流程，在同一次写入中完成绑定和本轮子树聚合验证
+[POS]: vdesign-figma 的轻量生成入口；认证级全量审计由独立的 vdesign-figma-audit 承担
 [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
 -->
 
 # VDesign Figma
 
-Create, inspect, and correct VDesign web-admin interfaces in Figma. Default generation optimizes for a fast, usable first result without falling back to hardcoded substitutes; certification-level coverage is explicit.
+Generate visible, editable VDesign admin UI quickly without substituting hardcoded lookalikes for real design-system assets.
 
-## Required context
+## Library and routing
 
-- Design-system file: `jjmsk6tyXH3mAEaGyR6FhL`
-- Library name: `VDesign Web System`
+- VDesign file: `jjmsk6tyXH3mAEaGyR6FhL`
+- Library: `VDesign Web System`
 - Library key: `lk-764e6a23379883e834f1c7c139437927a42648079d028568f2f5b91578f1f1953f1fe80865e92bdb79267b6f9468ca25afa970bb065678685eb35dde47be29bb`
-- Read [references/vdesign-assets.json](references/vdesign-assets.json) as the primary key cache. Read [references/vdesign-assets.md](references/vdesign-assets.md) only for caveats, ambiguous matches, or cache maintenance.
-- Read [references/audit-and-repair.md](references/audit-and-repair.md) for audit or repair work, and use its mode-specific validation table when completing generated work.
-- Load `figma-use` before every `use_figma` call. Load `figma-generate-design` as well when building or updating a composed screen or view. Follow both skills' tool-call rules.
-- Do not load `figma-generate-library` unless the user explicitly asks to create or maintain a reusable component library.
-- Do not call `get_design_context` for native Figma design generation. It belongs to design-to-code workflows.
+- Primary font: `PingFang SC`
+- Load `figma-use` before every `use_figma` call. Load `figma-generate-design` only when its own trigger applies.
+- Do not load `figma-generate-library` unless the user asks to build or maintain a reusable library.
+- Do not call `get_design_context` for native Figma generation.
+- Ordinary requests such as “使用 VDesign” or “完成后检查覆盖率” stay in this skill's focused validation. Route to `vdesign-figma-audit` only when the user explicitly asks for a full audit, formal acceptance, certification, all-canvas coverage, or 100% coverage.
 
-Treat published keys as identity and names only as search hints. Import cached keys directly. Use live discovery only when the cache has no suitable entry, a cached key fails to import, or the user explicitly asks to refresh the design system. Scope every search to the exact VDesign library key; never search community libraries silently.
+## Retrieve only needed assets
 
-## Choose the mode
+Do not load the whole asset catalog into context. Query only the entries needed for the current design from [references/vdesign-assets.json](references/vdesign-assets.json), for example with `jq` by component intent, text role, resolved radius, or `resolvedPx` spacing.
 
-- **generate-fast** (default): the user asks to create or update a VDesign screen, view, modal, drawer, panel, table, or admin flow. Deliver the visible design first, then validate only the changed subtree against the focused generation gate.
-- **generate-strict**: the user explicitly asks for complete audit, formal delivery, certification, or 100% binding coverage. Generate, then run the full strict audit gate.
-- **audit**: the user asks to inspect compliance or requests a report. Do not mutate the file.
-- **repair**: the user asks to fix an existing design. Audit first, then change only failing nodes.
+Use this order:
 
-General phrases such as "use VDesign" or "follow the design system" do not imply strict mode. Use `generate-strict` only for explicit certification-level intent. Never turn an audit-only request into a repair.
+1. Reuse a compatible VDesign instance already present in the target or reference node.
+2. Import the exact cached published key.
+3. Search the scoped VDesign library once only when both reuse and cache miss, an import fails, or the user asks to refresh the library.
+4. Use controlled manual composition only when one exact search finds no compatible asset. Record only the query and incompatibility.
 
-## Resolve assets progressively
+Never rediscover a cached key, repeat a query, search community libraries, detach an imported instance, or create replacement VDesign tokens.
 
-Before the first canvas mutation, resolve only the page skeleton, visible type roles, and primary controls. Keep one working asset-resolution table and extend it region by region:
+## Fast call budget
 
-| Element intent | VDesign asset | Published key | Required properties | Text override path | Status |
-| --- | --- | --- | --- | --- | --- |
+For a simple screen, dialog, drawer, panel, or up to four states, target **three Figma calls**:
 
-For each control or pattern:
+1. **Compact inspect, only when needed.** Read the target/reference and return only direct structure, reusable instance/style/variable keys, dimensions, and actual resolved spacing values. Do not dump every paint or descendant.
+2. **Write + bind + validate.** In one `use_figma` script, create or update the deterministic wrapper, apply bindings, then validate only nodes changed by that script. Return aggregate counts and failure records; do not return successful node details.
+3. **One final screenshot.** Take it when visual QA is needed. Do not perform another full structural read merely to produce a report.
 
-1. Look up the intent in `vdesign-assets.json` and batch-import cached keys.
-2. Search the scoped VDesign library once only when the cache misses or import fails.
-3. Inspect the imported component's actual property definitions before setting variant, Boolean, text, or instance-swap properties.
-4. Mark the element `cached`, `resolved-live`, `controlled-manual`, or `blocked`.
-5. Continue drawing all resolved regions. A local unknown blocks only that region, not the rest of the screen.
+If the reference already exposes sufficient reusable assets, combine inspection with the write and finish in two calls. One scoped search may raise the target to four calls. More than four calls is a performance regression unless a reported tool failure or user-requested strict audit explains it.
 
-Do not repeat the same search intent or query in one run. Empty local-variable or local-style results do not prove the linked library lacks the asset; consult the cache, then use the single scoped live search allowance.
+- First mutation must happen by call 2.
+- Retry the same failed operation once at most. After a timeout, check the deterministic wrapper before retrying because the write may have committed.
+- Stop after two consecutive connection or transport failures.
+- Do not take intermediate screenshots.
 
-## Figma call budget
+## One-script generation contract
 
-For `generate-fast`, count every Figma MCP read, search, script, and screenshot call.
+Derive one exact wrapper name and reuse only a direct child with that name. Never create a second wrapper on retry.
 
-- Make the first canvas mutation no later than call 4. Before it, use at most three calls to inspect the target and resolve skeleton assets.
-- Search each distinct asset intent at most once. Reuse the working resolution table across sections.
-- Retry the same failed operation at most once. Before retrying a timed-out mutation, read back the intended wrapper because the first call may have committed.
-- After two consecutive connection or transport failures, stop Figma work and report the last confirmed state. Do not enter an open-ended recovery loop.
-- Take one final screenshot by default. Add another only when a structural read-back cannot diagnose a visible defect, and report why.
-- A simple design with up to four states should finish within six total Figma calls. Exceeding this is a performance failure to report, even when the design itself succeeds.
+Within the main mutation script:
 
-Strict audit work may exceed the six-call target, but the per-intent search limit, retry limit, and two-failure stop condition still apply.
+1. Build the Auto Layout structure directly inside the wrapper.
+2. Reuse/import real VDesign instances and set only inspected property keys.
+3. Bind semantic colors, radii, and every changed non-zero gap or padding field.
+4. Materialize text last.
+5. Audit the changed node IDs before returning.
 
-## Asset priority
+Return only root dimensions, used asset keys, five coverage pairs, and failure records. Do not serialize full nodes, successful descendant records, complete fills, or complete `componentProperties` after the needed property keys are known.
 
-1. Reuse a VDesign component instance and set its real variant, Boolean, text, and instance-swap properties.
-2. Compose uncovered business structures from VDesign variables, text styles, effect styles, and auto layout.
-3. Use controlled manual construction only after the cache misses and the single exact component search finds no compatible asset. Record the query, candidates, and incompatibility. If the custom structure repeats in the requested design, create one local component and place instances.
-
-Do not create replacement VDesign variables, text styles, or library-like components. Do not detach imported instances.
-
-## Binding rules
-
-Apply these rules to nodes eligible under the selected mode's denominator. They define what passes; they do not expand `generate-fast` into a full-canvas audit.
+## Binding invariants
 
 ### Components
 
-- Component-mappable controls must be `INSTANCE` nodes whose main component or component-set published key belongs to VDesign.
-- A frame named `Button`, `按钮`, `输入框`, or another known control is not compliant.
-- Inspect `componentProperties` before overriding content. Use `setProperties()` for exposed `TEXT`, `BOOLEAN`, `VARIANT`, and `INSTANCE_SWAP` properties.
-- If the component does not expose a text property, load every font returned by the target text node's styled segments, then edit only the intended instance text override.
+- Component-mappable controls must remain `INSTANCE` nodes whose main component or component set has a VDesign published key.
+- Inspect actual component properties before calling `setProperties()`. Never guess generated property suffixes.
+- Preserve existing compatible instances instead of re-importing or replacing them.
 
 ### Text
 
-- Every visible semantic UI text node must use a published VDesign `TextStyle` key.
-- Import the selected style with `importStyleByKeyAsync()`. Load both the text node's current font and the imported style's `fontName` before changing characters or applying the style.
-- Set characters, wrapping mode, and width first. Apply the imported style with `setTextStyleIdAsync()` as the final typography write. Do not write `fontName`, `fontSize`, `lineHeight`, `letterSpacing`, or paragraph properties afterward.
-- A non-empty single-line label should normally use `WIDTH_AND_HEIGHT`. Wrapped or fixed-width copy must use `HEIGHT`, retain its intended width, and grow vertically from content. Never call `resize()` with a guessed height such as `1`.
-- After binding, resolve the applied style and compare the node's actual `fontName`, `fontSize`, `lineHeight`, and `letterSpacing` with it. `textStyleId` alone does not pass. Every visible non-empty text node must have `width > 1`, `height > 1`, and a height consistent with at least one resolved line.
-- If the imported PingFang font cannot be loaded or actual typography differs after one final style application, mark the node `typography-pending`; do not substitute a fallback font and report it as compliant.
-- Prefer an exact typography-signature match during repair. Use semantic role to break ties. Do not assign by display name alone because the library contains historical spelling and duplicate-name inconsistencies.
-- Loading a font successfully does not count as applying a text style.
+- Visible semantic text must use a published VDesign `TextStyle`.
+- Load the node's current fonts and the imported style font before editing.
+- Set content, width, wrapping, and `textAutoResize` first; call `setTextStyleIdAsync()` last. Do not write raw typography afterward.
+- Single-line labels normally use `WIDTH_AND_HEIGHT`; fixed-width or wrapped copy uses `HEIGHT`.
+- Validation must compare actual `fontName`, `fontSize`, `lineHeight`, and `letterSpacing` with the resolved style. A style ID alone does not pass.
+- Visible text with width or height `<= 1` fails. Never use a guessed 1px text height.
 
-### Colors
+### Colors and radius
 
-- Every semantic UI `SOLID` fill or stroke must have a paint `boundVariables.color` alias to a VDesign color variable.
-- Import variables by published key. Bind paints with `setBoundVariableForPaint()` and reassign the returned paint.
-- Prefer semantic variables that match the node role over equal-valued primitives.
+- Semantic solid paints require a VDesign color-variable alias. Capture and reassign the paint returned by `setBoundVariableForPaint()`.
+- Semantic corners require VDesign `CORNER_RADIUS` aliases; raw numeric equality does not pass.
 
-### Radius
+### Spacing and layout
 
-- Every semantic UI corner must bind to a VDesign `CORNER_RADIUS` variable.
-- Bind `cornerRadius` when the node exposes a uniform corner field. For nodes with individual corner fields, bind all four radius fields to the selected variable unless the design intentionally uses different corner tokens.
-- A raw numeric value equal to a token is still a failure until its variable alias is present.
+- Use Auto Layout gap and padding fields; never spacer-only layers such as `间距/16`.
+- Select spacing by `resolvedPx` from the cache, **not by the number embedded in the variable name**. VDesign spacing names are scale labels: for example `padding/padding 8` resolves to 16px and `padding/padding 16` resolves to 32px.
+- Bind every changed non-zero `itemSpacing` and padding field to a VDesign `GAP` variable and verify the resulting alias within the same mutation call.
+- Content containers that should follow text use vertical `HUG`; fixed-height product surfaces are allowed only when intentional.
 
-### Layout and spacing
+## Focused completion gate
 
-- Use Auto Layout for repeated vertical or horizontal relationships. Represent spacing with `itemSpacing` and padding fields, never with empty frames, rectangles, or layers named like `间距/16`.
-- Import cached VDesign spacing variables such as `padding/padding 16` with `figma.variables.importVariableByKeyAsync()`; when a used value is not cached, search all exact required spacing values in one batched design-system call.
-- Bind `itemSpacing`, `paddingTop`, `paddingRight`, `paddingBottom`, and `paddingLeft` with `setBoundVariable()` when the matching VDesign variable has `GAP` scope. A matching raw number does not pass.
-- Use `layoutSizingVertical = "HUG"` for content containers that should follow child height. Fixed-height product surfaces are allowed only when the source requires them and their text descendants still auto-size correctly.
-- Read back every changed Auto Layout container and verify both the numeric value and `boundVariables` alias. Spacing bindings are part of `generate-fast`, not deferred to strict audit.
+Validate only nodes created or changed in this run:
 
-## Generate: two passes
+- visible text: published style, actual typography match, and content-driven size;
+- standard controls: compatible VDesign instances;
+- business-semantic colors and primary surface radii: VDesign variables;
+- all changed non-zero gaps and padding: VDesign `GAP` variables;
+- no spacer-only layers or duplicate wrapper;
+- changed subtree reads back successfully.
 
-1. Inspect the target root and relevant neighboring screen conventions. Do not inventory the whole file unless the requested scope requires it.
-2. Derive one deterministic wrapper name from the requested screen or flow name. Under the exact target root, reuse only a direct child with that exact name; otherwise create it once and retain its returned node ID for the run.
-3. **Pass 1 — structure:** build Auto Layout structure, content, and primary VDesign component instances incrementally by section. Use real gap and padding fields rather than spacer layers. Return every created or mutated node ID.
-4. After a timeout or retry, resolve the wrapper by its retained ID or exact direct-child name and continue missing sections. Never create a second wrapper with the same name.
-5. **Pass 2 — bindings:** batch-apply semantic color variables, major surface radius variables, and all changed spacing fields. Materialize text last: load the imported style font, configure auto-resize and width, then apply the text style as the final typography write.
-6. Read back the changed subtree once. Use one final screenshot for visual validation.
-7. In `generate-fast`, run the focused generation gate only on nodes created or modified in this run. In `generate-strict`, run the full strict gate and fix every non-exempt failure.
-
-## Audit
-
-Run the strict read-only procedure in [references/audit-and-repair.md](references/audit-and-repair.md). Report all five binding categories separately: text styles, radius variables, color variables, component instances, and spacing variables. Include node IDs and reasons for every failure and exclusion.
-
-## Repair
-
-1. Audit and keep the node-level findings as the repair manifest.
-2. Preserve already compliant nodes.
-3. Apply changes in this order: component replacement, Auto Layout and spacer repair, content-driven text sizing plus final text-style binding, radius binding, color binding, repeated custom-pattern componentization.
-4. Preserve position, dimensions, content, auto-layout relationships, and intended state. Replace a manual control only when component intent and variant selection are unambiguous.
-5. Re-audit the affected manifest after each repair batch and finish with one structural read-back plus one screenshot. Run a full-root re-audit at completion.
-
-## Completion gates
-
-`generate-fast` passes when the changed subtree satisfies all of these focused checks:
-
-- every visible text node has a published VDesign text style;
-- standard controls such as Button, Input, Select, Checkbox, Radio, and Switch use compatible VDesign instances;
-- business-semantic colors and primary card or panel radii use VDesign variables;
-- every changed Auto Layout gap and padding value uses a VDesign `GAP` variable, with no spacer layers;
-- every visible text node has content-driven height and actual typography matching its resolved text style;
-- the changed subtree can be read back and the final screenshot shows the requested states without obvious breakage.
-
-Generic layout containers, decorative dividers, image geometry, and untouched pre-existing nodes are outside the fast denominator. List unresolved changed nodes without expanding the audit to the full canvas.
-
-`generate-strict`, `audit`, and completed `repair` require 100% coverage among all semantic UI nodes in the strict root. Exclusions do not enter the denominator but must be listed with evidence. A screenshot alone cannot pass either gate.
-
-Return:
-
-- resolved library identity and asset keys used;
-- mode and Figma call count;
-- per-category numerator, denominator, percentage, and failing node IDs for that mode's denominator;
-- controlled-manual decisions and search evidence;
-- exclusions with reasons;
-- structural and visual validation results.
+Report five `passed/eligible` counts, failing node IDs only, root dimensions, asset keys used, call count, and whether the final screenshot was visually checked. Label this as **focused changed-subtree validation**, never full-canvas certification.

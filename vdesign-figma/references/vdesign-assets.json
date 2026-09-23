@@ -1,12 +1,12 @@
 {
   "_meta": {
     "input": "依赖 VDesign Web System 发布库及规范文件 jjmsk6tyXH3mAEaGyR6FhL 的已验证只读盘点结果",
-    "output": "对外提供可按意图直接读取的库身份、圆角与间距变量、中文文本样式和主要组件 published key",
-    "pos": "references 的机器可读资产缓存，是 generate-fast 的首选解析入口；语义解释和异常记录由 vdesign-assets.md 承担",
+    "output": "对外提供可按意图局部读取的库身份、圆角与真实解析间距、中文文本样式和主要组件 published key",
+    "pos": "references 的机器可读资产缓存，以 resolvedPx 阻止按变量名误判间距；语义解释和异常记录由 vdesign-assets.md 承担",
     "protocol": "[PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md"
   },
-  "schemaVersion": 2,
-  "verifiedAt": "2026-09-12",
+  "schemaVersion": 3,
+  "verifiedAt": "2026-09-23",
   "library": {
     "fileKey": "jjmsk6tyXH3mAEaGyR6FhL",
     "name": "VDesign Web System",
@@ -15,25 +15,28 @@
     "primaryFont": "PingFang SC"
   },
   "radiusVariables": [
-    { "px": 0, "name": "radius/None", "key": "fc6b9e9fa338aa0ec0cd4ffaacbd474978e14126" },
-    { "px": 2, "name": "radius/radius 1", "key": "b5942515521e7d4796163238114282a897001965" },
-    { "px": 4, "name": "radius/radius 2", "key": "d58f4e5f5f776b9b5a034f5b5afca5354cc74fe9" },
-    { "px": 6, "name": "radius/radius 3", "key": "f60c8ddeae2fddd19696f04af1ee481d66c27362" },
-    { "px": 8, "name": "radius/radius 4", "key": "8b50b57d307ad2e2800e3ae9051c60602ec2fdaa" },
-    { "px": 10, "name": "radius/radius 5", "key": "e6d9262c10cddce0d6afb5d3005f4cfb68475bc9" },
-    { "px": 12, "name": "radius/radius 6", "key": "a01b6ca1102eb7c1ff7b06e08166d65be68c3542" },
-    { "px": 16, "name": "radius/radius 8", "key": "3522580b10f64cbe6864cf9be3ccfc8dd969d204" },
-    { "px": 20, "name": "radius/radius 10", "key": "9feea3831b96ad790c94f09ae0ce5fcfb4f2a39c" }
+    { "resolvedPx": 0, "name": "radius/None", "key": "fc6b9e9fa338aa0ec0cd4ffaacbd474978e14126" },
+    { "resolvedPx": 2, "name": "radius/radius 1", "key": "b5942515521e7d4796163238114282a897001965" },
+    { "resolvedPx": 4, "name": "radius/radius 2", "key": "d58f4e5f5f776b9b5a034f5b5afca5354cc74fe9" },
+    { "resolvedPx": 6, "name": "radius/radius 3", "key": "f60c8ddeae2fddd19696f04af1ee481d66c27362" },
+    { "resolvedPx": 8, "name": "radius/radius 4", "key": "8b50b57d307ad2e2800e3ae9051c60602ec2fdaa" },
+    { "resolvedPx": 10, "name": "radius/radius 5", "key": "e6d9262c10cddce0d6afb5d3005f4cfb68475bc9" },
+    { "resolvedPx": 12, "name": "radius/radius 6", "key": "a01b6ca1102eb7c1ff7b06e08166d65be68c3542" },
+    { "resolvedPx": 16, "name": "radius/radius 8", "key": "3522580b10f64cbe6864cf9be3ccfc8dd969d204" },
+    { "resolvedPx": 20, "name": "radius/radius 10", "key": "9feea3831b96ad790c94f09ae0ce5fcfb4f2a39c" }
   ],
   "spacingVariables": [
-    {
-      "px": 16,
-      "name": "padding/padding 16",
-      "key": "5a0bb5cfe4b1e6af9afa98e3b6385c6acf82358a",
-      "collection": "vzan",
-      "scopes": ["GAP"],
-      "verifiedAt": "2026-09-15"
-    }
+    { "resolvedPx": 2, "name": "padding/padding 1", "key": "3a400f14f3ea3c4c7b1f9060a26e067a381e1a03", "collection": "vzan", "scopes": ["GAP"] },
+    { "resolvedPx": 4, "name": "padding/padding 2", "key": "d5c076053f5ff7f456320c607cf842f9e53b9fc0", "collection": "vzan", "scopes": ["GAP"] },
+    { "resolvedPx": 6, "name": "padding/padding 3", "key": "6fa1c8cdca4a6da89ddfcc2f77c99fa7f7bef8a9", "collection": "vzan", "scopes": ["GAP"] },
+    { "resolvedPx": 8, "name": "padding/padding 4", "key": "f10aa609c8a9342ede37216d2412dcdec8c35067", "collection": "vzan", "scopes": ["GAP"] },
+    { "resolvedPx": 10, "name": "padding/padding 5", "key": "330342c9d23f59eb87545da707023643f3157b8d", "collection": "vzan", "scopes": ["GAP"] },
+    { "resolvedPx": 12, "name": "padding/padding 6", "key": "d727bebe46b6e69d9307a4ab5b11c0bee71da0eb", "collection": "vzan", "scopes": ["GAP"] },
+    { "resolvedPx": 16, "name": "padding/padding 8", "key": "4718f622ed5831b35031f908772d9e295721db42", "collection": "vzan", "scopes": ["GAP"] },
+    { "resolvedPx": 20, "name": "padding/padding 10", "key": "2ec4a1093abe71ea4ff9c79d3d46ee067c56992b", "collection": "vzan", "scopes": ["GAP"] },
+    { "resolvedPx": 24, "name": "padding/padding 12", "key": "93e576637fba54e172893a1df7963150d42c2857", "collection": "vzan", "scopes": ["GAP"] },
+    { "resolvedPx": 32, "name": "padding/padding 16", "key": "5a0bb5cfe4b1e6af9afa98e3b6385c6acf82358a", "collection": "vzan", "scopes": ["GAP"] },
+    { "resolvedPx": 40, "name": "padding/padding 20", "key": "0e2470addc030e13d8c901941463db5f152d3c19", "collection": "vzan", "scopes": ["GAP"] }
   ],
   "textStyles": [
     { "role": "body", "name": "正文/12/12·Regular", "size": 12, "lineHeight": 20, "weight": "Regular", "key": "a76c6f52e42b9b27e5061a7c95ea949248bb518f" },

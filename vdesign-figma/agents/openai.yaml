@@ -1,12 +1,12 @@
 # [INPUT]: 依赖 vdesign-figma/SKILL.md 的能力边界，依赖 Figma MCP 提供设计系统读写能力
-# [OUTPUT]: 对 Codex 提供 Skill 展示信息、generate-fast 默认提示、依赖声明与自动调用策略
+# [OUTPUT]: 对 Codex 提供 Skill 展示信息、三次调用默认提示、依赖声明与自动调用策略
 # [POS]: agents 的运行时界面配置，由 Codex Skill 注册器读取
 # [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
 interface:
   display_name: "VDesign Figma"
-  short_description: "快速生成 VDesign 后台设计，按需执行认证级审计"
+  short_description: "三次调用内生成并验证 VDesign 后台设计"
   brand_color: "#006CFF"
-  default_prompt: "Use $vdesign-figma in generate-fast mode unless I explicitly request certification-level audit, formal delivery, or 100% binding coverage."
+  default_prompt: "Use $vdesign-figma with the three-call workflow and focused changed-subtree validation; route explicit full, formal, certification-level, or 100% audits to $vdesign-figma-audit."
 
 dependencies:
   tools:
