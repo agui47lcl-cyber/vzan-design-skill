@@ -2,7 +2,7 @@
 Codex Skill + Figma MCP + VDesign Web System
 
 <directory>
-vdesign-figma/ - 低调用生成与局部修复 VDesign Figma 后台设计稿的 Skill（2 子目录：agents、references）
+vdesign-figma/ - 参考稿优先、默认不覆盖且低调用生成/局部修复 VDesign Figma 后台设计稿的 Skill（2 子目录：agents、references）
 vdesign-figma-audit/ - 显式执行认证级、全量或 100% VDesign 绑定审计的独立 Skill（2 子目录：agents、references）
 </directory>
 

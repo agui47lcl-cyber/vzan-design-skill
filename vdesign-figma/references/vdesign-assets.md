@@ -1,6 +1,6 @@
 <!--
 [INPUT]: 依赖 VDesign Web System 发布库及规范文件 jjmsk6tyXH3mAEaGyR6FhL 的只读盘点结果
-[OUTPUT]: 对外解释稳定库身份、圆角与真实解析间距、中文文本样式和主要组件的 published key 语义及已知例外
+[OUTPUT]: 对外解释稳定库身份、圆角与真实解析间距、中文文本样式、字体运行时状态和主要组件默认文案的 published key 语义及已知例外
 [POS]: references 的人工可读资产说明，与 vdesign-assets.json 同源；JSON 以 resolvedPx 负责按需命中，本文只在歧义、异常或维护缓存时加载
 [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
 -->
@@ -109,6 +109,15 @@ Names contain existing spelling such as `Reagular`. Preserve those names in repo
 
 `标题/28/28·Medium` currently resolves to 18 / 26 despite its name. Do not select it by name-derived size. Legacy `正文·14/14·Medium` with key `48e022395306066e2fbcde49b22c97152a855fed` appears in existing work but is not the canonical published entry; new work should use `正文/14/14·Medium`.
 
+### Font runtime contract
+
+An importable PingFang text style does not guarantee that the remote Figma execution host can load `PingFang SC`. Check the exact font once before a text-changing mutation.
+
+- If it loads, edit content and sizing first and bind the imported style last.
+- If it does not load, use `Noto Sans SC` only as an editable construction fallback, then bind the VDesign style and re-read the effective font and metrics.
+- A present `textStyleId` with mismatched effective typography is `pending-font-runtime`, not a typography pass.
+- Do not ask the user to detach and undo a style to obtain the correct appearance; that symptom indicates the original write left raw overrides or never completed the style read-back.
+
 ## Primary published components
 
 The property lists are lookup aids. Read the imported component's current definitions before calling `setProperties()`.
@@ -139,7 +148,17 @@ The property lists are lookup aids. Read the imported component's current defini
 | Table cell | `表格单元` | `4324c30fa436fd58a7048d66923d9188516998c1` | 内容类型及显示属性 |
 | Title bar | `标题栏` | `21af895f8d9dcb7d72a4a6a414ec48557479eaa6` | 后缩按钮 |
 
-The Button set does not currently expose a TEXT property in its top-level definitions. Inspect the instance for nested text properties; if none exist, override the intended text descendant after loading its actual font. Dot-prefixed component sets are internal building blocks: prefer their public composite when one exists.
+The Button set does not currently expose a TEXT property in its top-level definitions, and some text-action variants can resolve to an instance with no text descendant. Inspect the concrete variant after `setProperties()`:
+
+- when an editable text descendant exists, load its actual fonts and update that descendant;
+- when a text/link action has no text descendant, do not retain the empty instance and overlay a label; use a visible VDesign-styled blue text action after the single exact component search fails, and record the incompatibility;
+- solid or bordered buttons still require a compatible labeled VDesign instance.
+
+Inputs and text areas already contain default placeholder copy. Preserve that internal text unless the user asks for different copy, and never add another placeholder frame or sibling text. Validate ownership through the ancestor chain to the input instance. Checkbox and radio variants may legitimately have no internal label; pair those with a sibling label in horizontal Auto Layout.
+
+Variant component keys may differ from their published component-set keys. Provenance checks must accept a matching VDesign main component or ancestor component set rather than comparing only the variant key to this table.
+
+Dot-prefixed component sets are internal building blocks: prefer their public composite when one exists.
 
 No component set was found on the current drawer page snapshot. Search the live VDesign library for `抽屉` before using controlled manual construction.
 
