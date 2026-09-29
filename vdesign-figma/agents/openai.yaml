@@ -1,10 +1,12 @@
-# [INPUT]: 依赖 vdesign-figma/SKILL.md 的能力边界，依赖 Figma MCP 提供设计系统读写能力
-# [OUTPUT]: 对 Codex 提供 Skill 展示信息、参考稿优先且默认不覆盖的三次调用提示、依赖声明与自动调用策略
+# [INPUT]: 依赖 vdesign-figma/SKILL.md 的能力边界、assets 的 SVG 源 Logo 与 512px/1024px 品牌图标，依赖 Figma MCP 提供设计系统读写能力
+# [OUTPUT]: 对 Codex 提供带用户指定品牌 Logo 的 Skill 展示信息、参考稿优先且默认不覆盖的三次调用提示、依赖声明与自动调用策略
 # [POS]: agents 的运行时界面配置，由 Codex Skill 注册器读取
 # [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
 interface:
   display_name: "VDesign Figma"
   short_description: "参考稿优先且默认不覆盖的 VDesign 生成与修复"
+  icon_small: "./assets/vdesign-figma-logo-512.png"
+  icon_large: "./assets/vdesign-figma-logo.svg"
   brand_color: "#006CFF"
   default_prompt: "Use $vdesign-figma with reference-led styling, non-destructive versioning, the three-call workflow, and focused changed-subtree validation; route explicit full, formal, certification-level, or 100% audits to $vdesign-figma-audit."
 
